@@ -62,10 +62,13 @@ class DouyinMusicConsole:
             
             song_items = self.browser.page.query_selector_all('.song-item')
             for item in song_items:
+                name_elem = item.query_selector('.song-name')
+                artist_elem = item.query_selector('.artist-name')
+                status_elem = item.query_selector('.status')
                 song_info = {
-                    'name': item.query_selector('.song-name')?.text_content() or '',
-                    'artist': item.query_selector('.artist-name')?.text_content() or '',
-                    'status': item.query_selector('.status')?.text_content() or ''
+                    'name': name_elem.text_content() if name_elem else '',
+                    'artist': artist_elem.text_content() if artist_elem else '',
+                    'status': status_elem.text_content() if status_elem else ''
                 }
                 songs.append(song_info)
         except Exception as e:
@@ -84,8 +87,10 @@ class DouyinMusicConsole:
             
             overview_items = self.browser.page.query_selector_all('.overview-item')
             for item in overview_items:
-                label = item.query_selector('.label')?.text_content() or ''
-                value = item.query_selector('.value')?.text_content() or ''
+                label_elem = item.query_selector('.label')
+                value_elem = item.query_selector('.value')
+                label = label_elem.text_content() if label_elem else ''
+                value = value_elem.text_content() if value_elem else ''
                 overview[label] = value
         except Exception as e:
             print(f"Failed to get data overview: {e}")

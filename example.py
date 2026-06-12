@@ -7,9 +7,12 @@ from douyin_music import BrowserManager, DouyinMusicConsole
 def main():
     load_dotenv()
 
+    headless = os.getenv("HEADLESS", "false").lower() == "true"
+    slow_mo = int(os.getenv("SLOW_MO", "0"))
+
     browser_manager = BrowserManager(
-        headless=False,
-        slow_mo=100,
+        headless=headless,
+        slow_mo=slow_mo,
         cookie_path="cookies.json"
     )
 
