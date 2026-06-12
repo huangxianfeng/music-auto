@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>抖音音乐自动化控制台</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f6fa; color: #2d3436; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+    h1 { font-size: 28px; margin-bottom: 30px; color: #0984e3; letter-spacing: 1px; }
+    .card { background: white; border-radius: 12px; padding: 30px; width: 100%; max-width: 560px; box-shadow: 0 4px 20px rgba(0,0,0,.08); margin-bottom: 24px; }
+    .card h2 { font-size: 18px; margin-bottom: 20px; color: #636e72; border-bottom: 1px solid #dfe6e9; padding-bottom: 10px; }
+    .form-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    label { font-weight: 600; font-size: 14px; color: #2d3436; margin-bottom: 6px; display: block; }
+    select, input[type="number"] { width: 100%; padding: 10px 14px; border: 1px solid #dfe6e9; border-radius: 8px; font-size: 15px; outline: none; transition: border-color .2s; }
+    select:focus, input[type="number"]:focus { border-color: #0984e3; }
+    button { padding: 12px 24px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform .1s, background .2s; }
+    button:active { transform: scale(.97); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary { background: #0984e3; color: white; width: 100%; }
+    .btn-primary:hover:not(:disabled) { background: #74b9ff; }
+    .btn-secondary { background: #dfe6e9; color: #2d3436; flex: 1; }
+    .btn-secondary:hover:not(:disabled) { background: #b2bec3; }
+    .btn-success { background: #00b894; color: white; flex: 1; }
+    .btn-success:hover:not(:disabled) { background: #55efc4; }
+    .status { padding: 14px; background: #dfe6e9; border-radius: 8px; font-size: 14px; text-align: center; min-height: 48px; display: flex; align-items: center; justify-content: center; }
+    .status.busy { background: #ffeaa7; }
+    .status.done { background: #55efc4; }
+    .status.error { background: #fab1a0; }
+    .hint { font-size: 12px; color: #b2bec3; margin-top: 8px; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>🎵 抖音音乐自动化</h1>
+
+  <div class="card">
+    <h2>快速操作</h2>
+    <div class="form-row">
+      <button class="btn-secondary" id="btn-open">打开控制台</button>
+      <button class="btn-success" id="btn-auto">自动创作+上传</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>自动创作配置</h2>
+    <div class="form-row">
+      <div style="flex:1">
+        <label for="theme">主题</label>
+        <select id="theme">
+          <option value="励志">励志</option>
+          <option value="抒情">抒情</option>
+          <option value="爱情">爱情</option>
+          <option value="古风">古风</option>
+        </select>
+      </div>
+      <div style="flex:1">
+        <label for="mood">情绪</label>
+        <select id="mood">
+          <option value="轻快">轻快</option>
+          <option value="舒缓">舒缓</option>
+          <option value="激昂">激昂</option>
+          <option value="悲伤">悲伤</option>
+        </select>
+      </div>
+      <div style="width:100px">
+        <label for="lines">歌词行数</label>
+        <input type="number" id="lines" value="8" min="4" max="20" />
+      </div>
+    </div>
+    <button class="btn-primary" id="btn-create">生成歌词</button>
+    <p class="hint">仅本地生成歌词，不打开浏览器</p>
+  </div>
+
+  <div class="card">
+    <h2>任务状态</h2>
+    <div class="status" id="status">空闲</div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    function setStatus(msg, cls) {
+      statusEl.textContent = msg;
+      statusEl.className = 'status ' + (cls || '');
+    }
+    function poll() {
+      fetch('/api/status').then(r=>r.json()).then(d=>{
+        setStatus(d.message, d.busy ? 'busy' : 'done');
+      });
+    }
+    setInterval(poll, 3000);
+
+    document.getElementById('btn-open').onclick = function() {
+      this.disabled = true;
+      setStatus('正在打开浏览器...', 'busy');
+      fetch('/api/open-console', {method:'POST'}).then(r=>r.json()).then(d=>{
+        setStatus(d.message, 'done');
+        this.disabled = false;
+      });
+    };
+
+    document.getElementById('btn-auto').onclick = function() {
+      const theme = document.getElementById('theme').value;
+      const mood = document.getElementById('mood').value;
+      const lines = parseInt(document.getElementById('lines').value);
+      this.disabled = true;
+      fetch('/api/create', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({theme, mood, lines})
+      }).then(r=>r.json()).then(d=>{
+        if(!d.ok){ setStatus(d.message, 'error'); this.disabled=false; }
+        else{ setStatus('任务已启动，请稍候...', 'busy'); }
+      });
+    };
+
+    document.getElementById('btn-create').onclick = function() {
+      this.disabled = true;
+      setStatus('正在生成歌词...', 'busy');
+      const theme = document.getElementById('theme').value;
+      const mood = document.getElementById('mood').value;
+      const lines = parseInt(document.getElementById('lines').value);
+      fetch('/api/create', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({theme, mood, lines})
+      }).then(r=>r.json()).then(d=>{
+        setTimeout(()=>{ setStatus(d.message, 'done'); this.disabled=false; }, 4000);
+      });
+    };
+  </script>
+</body>
+</html>
