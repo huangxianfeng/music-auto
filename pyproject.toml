@@ -1,0 +1,13 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[project]
+name = "douyin-music-console"
+version = "0.1.0"
+description = "Python + Playwright for Douyin Music Console"
+requires-python = ">=3.8"
+dependencies = [
+    "playwright>=1.40.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0"
+]
